@@ -1,0 +1,29 @@
+Procオブジェクト構造図
+
+VALUE ポインタ
+    ↓
+┌─────────────────┐
+│ RTypedData      │
+│ ├── RBasic      │
+│ │   ├── flags   │
+│ │   └── klass   │ ──→ Proc class
+│ └── data ───────┼──→ rb_proc_t
+└─────────────────┘       ├── rb_block_t
+                          │   ├── iseq (YARV命令列)
+                          │   ├── EP (環境ポインタ)
+                          │   ├── self
+                          │   ├── klass
+                          │   └── proc
+                          ├── envval (環境値)
+                          └── is_lambda (重要フラグ)
+
+VALUE ポインタチェーン:
+VALUE → RTypedData → rb_proc_t → rb_block_t → iseq
+        ↓             ↓         ↓
+      RBasic       envval      EP → ヒープ環境
+        ↓             ↓
+    Proc class   is_lambda
+
+is_lambdaフラグの役割:
+- true:  独立した関数として振る舞う（厳密な引数チェック、return は lambda から抜ける）
+- false: ブロックの延長として振る舞う（柔軟な引数、return は呼び出し元メソッドから抜ける）

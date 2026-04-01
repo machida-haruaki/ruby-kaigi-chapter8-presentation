@@ -1,0 +1,53 @@
+設定と実行の分離概念図
+
+従来のパラダイム:
+┌──────────────────────────────────────┐
+│ 関数呼び出し = 設定 + データ (毎回)   │
+│                                      │
+│ log_message(message, env, level,     │
+│            app_name, timestamp)      │
+│                                      │
+│ ↓ 毎回全ての設定を渡す必要           │
+└──────────────────────────────────────┘
+
+クロージャのパラダイム:
+┌─────────────────┐   ┌─────────────────┐
+│ 関数作成        │   │ 関数呼び出し     │
+│ = 設定込み      │ → │ = データのみ     │
+│ (一度だけ)      │   │ (何度でも)       │
+│                 │   │                 │
+│ logger = create │   │ logger.call     │
+│   _logger(env,  │   │   (message)     │
+│   level,        │   │                 │
+│   app_name)     │   │                 │
+└─────────────────┘   └─────────────────┘
+
+具体例:
+
+[従来の方法]
+def log_message(message, env, level, app_name)
+  puts "[#{env}][#{level}][#{app_name}] #{message}"
+end
+
+log_message("Error occurred", "prod", "ERROR", "MyApp")
+log_message("User login", "prod", "ERROR", "MyApp")
+log_message("Data saved", "prod", "ERROR", "MyApp")
+# ↑ 毎回同じ設定を渡している
+
+[クロージャの方法]  
+def create_logger(env, level, app_name)
+  lambda do |message|  # 設定を「封じ込める」
+    puts "[#{env}][#{level}][#{app_name}] #{message}"
+  end
+end
+
+logger = create_logger("prod", "ERROR", "MyApp")  # 設定フェーズ
+logger.call("Error occurred")                     # 実行フェーズ
+logger.call("User login")                         # 実行フェーズ
+logger.call("Data saved")                         # 実行フェーズ
+
+価値:
+✅ 関心の分離: 設定 vs データ
+✅ 再利用性: 同じ設定で何度でも実行
+✅ 保守性: 設定変更は一箇所のみ
+✅ 可読性: 呼び出し側がシンプル
